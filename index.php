@@ -6,12 +6,12 @@ use Kirby\Toolkit\Str;
 App::plugin('bnomei/recently-modified', [
     'options' => [
         'query' => "site.index(true).sortBy('modified', 'desc').onlyModifiedByUser",
-        'format' => function($datetime): string {
+        'format' => function ($datetime): string {
             $handler = kirby()->option('date.handler') ?? 'date';
             $formats = [
                 'date' => 'Y/m/d H:i:s',
                 'intl' => 'yyyy/MM/dd HH:mm:ss', // https://unicode-org.github.io/icu/userguide/format_parse/datetime/#datetime-format-syntax
-                'strftime' => '%Y/%m/%d %H:%M:%S'
+                'strftime' => '%Y/%m/%d %H:%M:%S',
             ];
             $format = $formats[$handler] ?? $formats['date'];
 
@@ -36,7 +36,7 @@ App::plugin('bnomei/recently-modified', [
             'props' => [
                 'auser' => function () {
                     $user = $this->model()->findRecentlyModifiedByUser();
-                    return $user ? (string)$user->nameOrEmail() : '';
+                    return $user ? (string) $user->nameOrEmail() : '';
                 },
                 'datetime' => function () {
                     return option('bnomei.recently-modified.format')($this->model()->modified());
@@ -64,8 +64,8 @@ App::plugin('bnomei/recently-modified', [
                             'info' => option('bnomei.recently-modified.info')($page),
                         ];
                     }));
-                }
-            ]
+                },
+            ],
         ],
     ],
     'siteMethods' => [
@@ -84,15 +84,23 @@ App::plugin('bnomei/recently-modified', [
                 ]);
                 $keys = $collection
                     ->limit(intval(option('bnomei.recently-modified.limit')))
-                    ->toArray(fn ($page) => $page->id());
-                kirby()->cache('bnomei.recently-modified')
-                    ->set($cacheKey, $keys, intval(option('bnomei.recently-modified.expire')));
+                    ->toArray(fn($page) => $page->id());
+                kirby()->cache('bnomei.recently-modified')->set(
+                    $cacheKey,
+                    $keys,
+                    intval(option('bnomei.recently-modified.expire')),
+                );
             }
             return pages($keys ?? []);
         },
         'modifiedTimestamp' => function () {
-            $t = filemtime(site()->root().
-                (kirby()->multilang()?'/site.'.kirby()->defaultLanguage()->code().'.txt':'/site.txt')
+            $t = filemtime(
+                site()->root()
+                    . (
+                        kirby()->multilang()
+                            ? '/site.' . kirby()->defaultLanguage()->code() . '.' . option('content.extension')
+                            : '/site.' . option('content.extension')
+                    ),
             );
             return $t ?: time();
         },
@@ -205,12 +213,15 @@ App::plugin('bnomei/recently-modified', [
                 'pattern' => 'recentlymodified/field',
                 'action' => function () {
                     $id = urldecode(get('id'));
-                    $id = explode('?', ltrim(str_replace(['/pages/', '/_drafts/', '+', ' '], ['/', '/', '/', '/'], $id), '/'))[0];
+                    $id = explode('?', ltrim(
+                        str_replace(['/pages/', '/_drafts/', '+', ' '], ['/', '/', '/', '/'], $id),
+                        '/',
+                    ))[0];
                     $kirby = App::instance(null, true);
 
                     if ($id === 'site') {
                         $user = site()->findRecentlyModifiedByUser();
-                        $username = $user ? (string)$user->nameOrEmail() : '';
+                        $username = $user ? (string) $user->nameOrEmail() : '';
                         return [
                             'auser' => $username,
                             'datetime' => option('bnomei.recently-modified.format')(site()->modifiedTimestamp()),
@@ -218,7 +229,7 @@ App::plugin('bnomei/recently-modified', [
                     }
                     if ($page = $kirby->page($id)) {
                         $user = $page->findRecentlyModifiedByUser();
-                        $username = $user ? (string)$user->nameOrEmail() : '';
+                        $username = $user ? (string) $user->nameOrEmail() : '';
                         return [
                             'auser' => $username,
                             'datetime' => option('bnomei.recently-modified.format')($page->modified()),
