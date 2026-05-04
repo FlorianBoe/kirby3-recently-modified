@@ -94,15 +94,26 @@ App::plugin('bnomei/recently-modified', [
             return pages($keys ?? []);
         },
         'modifiedTimestamp' => function () {
-            $t = filemtime(
-                site()->root()
-                    . (
-                        kirby()->multilang()
-                            ? '/site.' . kirby()->defaultLanguage()->code() . '.' . option('content.extension')
-                            : '/site.' . option('content.extension')
-                    ),
-            );
-            return $t ?: time();
+            $root = site()->root();
+            $extension = kirby()->contentExtension();
+            $files = [];
+
+            if (kirby()->multilang()) {
+                foreach (kirby()->languages() as $language) {
+                    $files[] = $root . '/site.' . $language->code() . '.' . $extension;
+                }
+            } else {
+                $files[] = $root . '/site.' . $extension;
+            }
+
+            $timestamps = [];
+            foreach ($files as $file) {
+                if (is_file($file) && ($modified = filemtime($file)) !== false) {
+                    $timestamps[] = $modified;
+                }
+            }
+
+            return empty($timestamps) ? time() : max($timestamps);
         },
         'trackModifiedByUser' => function (bool $add = true): bool {
             if (!kirby()->user() || option('bnomei.recently-modified.hooks') !== true) {
