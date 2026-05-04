@@ -98,8 +98,8 @@ App::plugin('bnomei/recently-modified', [
                 site()->root()
                     . (
                         kirby()->multilang()
-                            ? '/site.' . kirby()->defaultLanguage()->code() . '.' . option('content.extension')
-                            : '/site.' . option('content.extension')
+                            ? '/site.' . kirby()->defaultLanguage()->code() . '.' . kirby()->contentExtension()
+                            : '/site.' . kirby()->contentExtension()
                     ),
             );
             return $t ?: time();
